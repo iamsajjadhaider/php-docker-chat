@@ -1,0 +1,50 @@
+version: '3.8'
+
+# Removed env_file from the root level.
+# env_file:
+#   - ./.env
+
+services:
+  # Service 1: PHP Frontend/Web Server
+  web:
+    build: ./web
+    container_name: php_frontend
+    # Load environment variables into the 'web' service
+    env_file:
+      - ./.env
+    # Expose port 80 inside the container to port 8080 on the host
+    ports:
+      - "8080:80"
+    volumes:
+      # Mount the PHP files into the Apache document root
+      - ./web:/var/www/html
+    # Ensure the web service waits for the database to be healthy
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Service 2: MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: mysql_backend
+    # Load environment variables into the 'db' service
+    env_file:
+      - ./.env
+    environment:
+      # Use variables defined in .env
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      # Persist the MySQL data outside the container
+      - db_data:/var/lib/mysql
+    # Define a healthcheck to ensure the PHP container waits for MySQL to be ready
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db_data:
