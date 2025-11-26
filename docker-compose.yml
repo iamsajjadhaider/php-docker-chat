@@ -1,4 +1,4 @@
-version: '3.8'
+#version: '3.8'
 
 # Removed env_file from the root level.
 # env_file:
